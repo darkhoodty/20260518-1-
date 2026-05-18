@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduPlan - 학업 일정 & 과제 관리 대시보드</title>
+    <!-- Google Fonts: Plus Jakarta Sans & Noto Sans KR -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="dark-theme">
+    <div class="app-container">
+        
+        <!-- ==================== SIDEBAR ==================== -->
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-logo">
+                    <i data-lucide="graduation-cap"></i>
+                </div>
+                <span class="brand-name">EduPlan</span>
+            </div>
+
+            <!-- Role Mode Selector -->
+            <div class="role-selector-card">
+                <span class="role-label">사용자 모드</span>
+                <div class="mode-toggle-group">
+                    <button class="mode-btn active" id="btn-student" onclick="setRole('student')">
+                        <i data-lucide="user"></i> 학생
+                    </button>
+                    <button class="mode-btn" id="btn-teacher" onclick="setRole('teacher')">
+                        <i data-lucide="shield-check"></i> 교사
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quick Stats Panel -->
+            <div class="stats-panel">
+                <h3 class="panel-title">내 대시보드 요약</h3>
+                <div class="stat-grid">
+                    <div class="stat-card urgent">
+                        <span class="stat-num" id="stat-urgent">0</span>
+                        <span class="stat-label">남은 시험</span>
+                    </div>
+                    <div class="stat-card pending">
+                        <span class="stat-num" id="stat-pending">0</span>
+                        <span class="stat-label">진행중 과제</span>
+                    </div>
+                    <div class="stat-card completed">
+                        <span class="stat-num" id="stat-completed">0</span>
+                        <span class="stat-label">완료한 과제</span>
+                    </div>
+                </div>
+                
+                <!-- Progress Circular Bar -->
+                <div class="progress-container">
+                    <div class="progress-header">
+                        <span>전체 과제 완료율</span>
+                        <span id="progress-percent">0%</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" id="progress-fill" style="width: 0%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Subject Filters -->
+            <div class="sidebar-menu">
+                <h3 class="panel-title">과목별 필터</h3>
+                <ul class="subject-filter-list" id="subject-filters">
+                    <li class="filter-item active" data-subject="all" onclick="filterBySubject('all')">
+                        <span class="subject-dot all"></span>
+                        <span class="filter-name">전체 과목</span>
+                    </li>
+                    <!-- Will be populated dynamically via JavaScript -->
+                </ul>
+            </div>
+            
+            <div class="sidebar-footer">
+                <span class="copyright">© 2026 EduPlan Dashboard</span>
+            </div>
+        </aside>
+
+        <!-- ==================== MAIN CONTENT AREA ==================== -->
+        <main class="main-content">
+            <!-- Header Section -->
+            <header class="main-header">
+                <div class="header-left">
+                    <h1 class="welcome-text">학업 관리 대시보드</h1>
+                    <p class="subtitle-text" id="header-date-text">오늘도 한 걸음 성장하는 하루를 보내세요.</p>
+                </div>
+                <div class="header-right">
+                    <!-- Search Bar -->
+                    <div class="search-box">
+                        <i data-lucide="search" class="search-icon"></i>
+                        <input type="text" id="search-input" placeholder="일정, 과제, 시험 검색..." oninput="handleSearch()">
+                    </div>
+                    <!-- Add Schedule Button (Visible in Teacher Mode) -->
+                    <button class="btn btn-primary" id="btn-add-schedule" onclick="openAddModal()">
+                        <i data-lucide="plus-circle"></i> <span>새 일정 등록</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Dashboard Layout (Grid) -->
+            <div class="dashboard-grid">
+                
+                <!-- 1. CALENDAR COMPONENT -->
+                <section class="dashboard-card calendar-card">
+                    <div class="card-header calendar-header">
+                        <div class="calendar-nav-left">
+                            <h2 class="card-title" id="calendar-month-year">2026년 5월</h2>
+                        </div>
+                        <div class="calendar-nav-right">
+                            <button class="btn-icon" onclick="changeMonth(-1)" title="이전 달">
+                                <i data-lucide="chevron-left"></i>
+                            </button>
+                            <button class="btn-secondary btn-sm" onclick="goToday()">오늘</button>
+                            <button class="btn-icon" onclick="changeMonth(1)" title="다음 달">
+                                <i data-lucide="chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="calendar-wrapper">
+                        <!-- Days of Week Headers -->
+                        <div class="calendar-weekdays">
+                            <div class="weekday sun">일</div>
+                            <div class="weekday">월</div>
+                            <div class="weekday">화</div>
+                            <div class="weekday">수</div>
+                            <div class="weekday">목</div>
+                            <div class="weekday">금</div>
+                            <div class="weekday sat">토</div>
+                        </div>
+                        <!-- Calendar Days Grid -->
+                        <div class="calendar-days" id="calendar-days-grid">
+                            <!-- Filled dynamically by JavaScript -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 2. UPCOMING TASKS & LIST COMPONENT -->
+                <section class="dashboard-card list-card">
+                    <div class="card-header list-header">
+                        <h2 class="card-title flex-grow">일정 & 과제 목록</h2>
+                        <div class="filter-tabs">
+                            <button class="tab-btn active" id="tab-all" onclick="filterByType('all')">전체</button>
+                            <button class="tab-btn" id="tab-homework" onclick="filterByType('homework')">
+                                <i data-lucide="book-open"></i> 숙제
+                            </button>
+                            <button class="tab-btn" id="tab-exam" onclick="filterByType('exam')">
+                                <i data-lucide="award"></i> 시험
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Search/Filter Results Status Bar -->
+                    <div class="active-filters-info" id="active-filters-info" style="display: none;">
+                        <span id="active-filter-text">필터 적용 중</span>
+                        <button class="btn-clear-filter" onclick="clearAllFilters()">필터 해제</button>
+                    </div>
+
+                    <!-- Tasks List Grid/Container -->
+                    <div class="tasks-list" id="tasks-list-container">
+                        <!-- Filled dynamically by JavaScript -->
+                    </div>
+                </section>
+                
+            </div>
+        </main>
+    </div>
+
+    <!-- ==================== MODAL: ADD SCHEUDLE ==================== -->
+    <div class="modal-backdrop" id="add-modal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3><i data-lucide="plus-circle" class="title-icon"></i>새 학업 일정 등록</h3>
+                <button class="btn-icon close-btn" onclick="closeAddModal()">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="add-schedule-form" onsubmit="handleFormSubmit(event)">
+                    
+                    <!-- Type Selector (Homework vs Exam) -->
+                    <div class="form-group">
+                        <label class="form-label">구분</label>
+                        <div class="form-toggle-group">
+                            <label class="form-toggle-item">
+                                <input type="radio" name="item-type" value="homework" checked>
+                                <div class="toggle-box">
+                                    <i data-lucide="book-open"></i>
+                                    <span>숙제 (Homework)</span>
+                                </div>
+                            </label>
+                            <label class="form-toggle-item">
+                                <input type="radio" name="item-type" value="exam">
+                                <div class="toggle-box">
+                                    <i data-lucide="award"></i>
+                                    <span>시험 (Exam)</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Title -->
+                    <div class="form-row">
+                        <div class="form-group flex-2">
+                            <label for="form-title" class="form-label">제목</label>
+                            <input type="text" id="form-title" required placeholder="예: 수학 익힘책 42-45쪽 풀이, 1학기 중간고사">
+                        </div>
+                        
+                        <!-- Subject Selector -->
+                        <div class="form-group flex-1">
+                            <label for="form-subject" class="form-label">과목</label>
+                            <select id="form-subject" required>
+                                <!-- Will be loaded from subject configurations dynamically -->
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Due Date & Time -->
+                    <div class="form-row">
+                        <div class="form-group flex-1">
+                            <label for="form-due-date" class="form-label">마감/시험 날짜</label>
+                            <input type="date" id="form-due-date" required>
+                        </div>
+                        <div class="form-group flex-1">
+                            <label for="form-due-time" class="form-label">마감/시험 시간</label>
+                            <input type="time" id="form-due-time" value="23:59" required>
+                        </div>
+                    </div>
+
+                    <!-- Image Upload (Drag & Drop Zone) - COMMENTED OUT FOR DEMO -->
+                    <!--
+                    <div class="form-group">
+                        <label class="form-label">참고 이미지 업로드</label>
+                        <div class="drag-drop-zone" id="drop-zone" onclick="triggerFileInput()">
+                            <i data-lucide="image-plus" class="upload-icon"></i>
+                            <div class="upload-text">
+                                <span class="highlight">파일 선택</span> 또는 이미지를 드래그 앤 드롭 하세요
+                            </div>
+                            <span class="upload-subtext">JPG, PNG, WEBP (최대 3MB)</span>
+                            <input type="file" id="form-image" accept="image/*" style="display: none;" onchange="handleFileSelect(event)">
+                        </div>
+                        
+                        <div class="image-preview-container" id="image-preview-container" style="display: none;">
+                            <img id="image-preview" src="" alt="업로드 이미지 미리보기">
+                            <button type="button" class="btn-preview-delete" onclick="removeSelectedImage(event)" title="이미지 삭제">
+                                <i data-lucide="trash-2"></i>
+                            </button>
+                        </div>
+                    </div>
+                    -->
+
+                    <!-- Additional Details (Description) -->
+                    <div class="form-group">
+                        <label for="form-desc" class="form-label">상세 내용 및 부가 설명</label>
+                        <textarea id="form-desc" rows="4" placeholder="과제 제출 방법, 시험 범위, 준비물 등의 추가 설명을 자유롭게 적어주세요."></textarea>
+                    </div>
+
+                    <!-- Submit Buttons -->
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closeAddModal()">취소</button>
+                        <button type="submit" class="btn btn-primary">등록하기</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== DRAWER: SCHEDULE DETAILS ==================== -->
+    <div class="drawer-backdrop" id="detail-drawer" onclick="closeDetailDrawer(event)">
+        <div class="drawer-card" onclick="event.stopPropagation()">
+            <div class="drawer-header">
+                <span class="drawer-category-badge" id="detail-type-badge">숙제</span>
+                <button class="btn-icon close-btn" onclick="closeDetailDrawer(event)">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            
+            <div class="drawer-body" id="detail-drawer-body">
+                <!-- Content generated dynamically in JavaScript -->
+            </div>
+            
+            <div class="drawer-footer" id="detail-drawer-footer">
+                <!-- Buttons loaded dynamically based on student/teacher role -->
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
